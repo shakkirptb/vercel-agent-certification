@@ -50,15 +50,18 @@ export function AgentProductCard({ invocation }: AgentProductCardProps) {
     return (
         <div className="overflow-hidden rounded-lg border border-border bg-card">
             {image && (
-                <div className="relative aspect-4/3 bg-secondary">
+                <Link
+                    href={`/products/${product.slug}`}
+                    className="relative block aspect-4/3 bg-secondary"
+                >
                     <Image
                         src={image}
                         alt={product.name}
                         fill
                         sizes="(min-width: 768px) 480px, 100vw"
-                        className="object-cover"
+                        className="object-cover transition-opacity hover:opacity-90"
                     />
-                </div>
+                </Link>
             )}
             <div className="space-y-3 p-4">
                 <div className="flex items-start justify-between gap-3">
