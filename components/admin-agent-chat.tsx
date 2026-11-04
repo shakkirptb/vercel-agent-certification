@@ -1,15 +1,5 @@
 "use client";
 
-/**
- * Welcome! This is the chat panel you will edit for the workshop!
- *
- * During the workshop you'll connect it to a real agent: swap the
- * local `useState` for `useChat` from the AI SDK, point the form
- * at `sendMessage`, and render each message's `parts` inside
- * `<ConversationContent>`.
- *
- * Workshop docs: https://agent-foundations-certification.vercel.app/docs/admin-chat-agent
- */
 import { useState } from "react";
 import {
   Conversation,
@@ -26,6 +16,13 @@ import {
   PromptInputTools,
 } from "@/components/ai-elements/prompt-input";
 import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
+import {
+  Message,
+  MessageContent,
+  MessageResponse,
+} from "./ai-elements/message";
+import { useChat } from "@ai-sdk/react";
+import { WorkflowChatTransport } from "@ai-sdk/workflow/client";
 
 const SUGGESTIONS = [
   "Show me low-stock items",
@@ -36,35 +33,70 @@ const SUGGESTIONS = [
 export function AdminAgentChat() {
   const [input, setInput] = useState("");
 
-  const handleSubmit = (message: PromptInputMessage) => {};
+  const { messages, error, sendMessage } = useChat({
+    // we need to point to a different API route because this is a different agent
+    transport: new WorkflowChatTransport({ api: "/api/admin/chat" }),
+  });
+
+  const handleSubmit = (message: PromptInputMessage) => {
+    sendMessage({ text: input });
+    setInput("");
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    sendMessage({ text: suggestion });
+  };
+
+  if (error) return <div>{error.message}</div>;
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <Conversation className="flex-1">
-        <ConversationContent>{null}</ConversationContent>
-        <ConversationScrollButton />
-      </Conversation>
+      <div className="flex h-full min-h-0 flex-col">
+        <Conversation className="flex-1">
+          <ConversationContent>
+            {messages.map((m) =>
+                m.parts.map((p, i) => {
+                  switch (p.type) {
+                    case "text":
+                      return (
+                          <Message key={`${m.id}-${i}`} from={m.role}>
+                            <MessageContent>
+                              <MessageResponse>{p.text}</MessageResponse>
+                            </MessageContent>
+                          </Message>
+                      );
+                    default:
+                      return null;
+                  }
+                }),
+            )}
+          </ConversationContent>
+          <ConversationScrollButton />
+        </Conversation>
 
-      <div className="flex flex-col gap-3 border-t p-3">
-        <Suggestions>
-          {SUGGESTIONS.map((s) => (
-            <Suggestion key={s} suggestion={s} />
-          ))}
-        </Suggestions>
-        <PromptInput onSubmit={handleSubmit}>
-          <PromptInputBody>
-            <PromptInputTextarea
-              value={input}
-              onChange={(e) => setInput(e.currentTarget.value)}
-              placeholder="Ask the admin agent…"
-            />
-          </PromptInputBody>
-          <PromptInputFooter>
-            <PromptInputTools />
-            <PromptInputSubmit status="ready" disabled={!input.trim()} />
-          </PromptInputFooter>
-        </PromptInput>
+        <div className="flex flex-col gap-3 border-t p-3">
+          <Suggestions>
+            {SUGGESTIONS.map((s) => (
+                <Suggestion
+                    key={s}
+                    suggestion={s}
+                    onClick={handleSuggestionClick}
+                />
+            ))}
+          </Suggestions>
+          <PromptInput onSubmit={handleSubmit}>
+            <PromptInputBody>
+              <PromptInputTextarea
+                  value={input}
+                  onChange={(e) => setInput(e.currentTarget.value)}
+                  placeholder="Ask the admin agent…"
+              />
+            </PromptInputBody>
+            <PromptInputFooter>
+              <PromptInputTools />
+              <PromptInputSubmit status="ready" disabled={!input.trim()} />
+            </PromptInputFooter>
+          </PromptInput>
+        </div>
       </div>
-    </div>
   );
 }
