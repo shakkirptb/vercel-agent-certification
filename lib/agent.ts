@@ -16,3 +16,4 @@ export const shoppingAgent = new ToolLoopAgent({
 
 export type ShoppingAgentUIMessage = InferAgentUIMessage<typeof shoppingAgent>;
 export type SearchProductsToolInvocation = UIToolInvocation<typeof searchProducts>;
+export type ProductDetailsToolInvocation = UIToolInvocation<typeof getProductDetails>;
