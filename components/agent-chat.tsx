@@ -37,8 +37,15 @@ export function AgentChat() {
       <div className="flex h-full min-h-0 flex-col">
         <Conversation className="flex-1">
           <ConversationContent>
-            {messages.map((m) =>
-                m.parts.map((p, i) => {
+            {messages.map((m) => {
+              // When the agent searched only to resolve a name into a slug and
+              // then pulled the full record, the shortlist is scaffolding —
+              // show just the detail card.
+              const hasProductDetails = m.parts.some(
+                  (p) => p.type === "tool-getProductDetails",
+              );
+
+              return m.parts.map((p, i) => {
                   switch (p.type) {
                     case "text":
                       return (
@@ -49,6 +56,7 @@ export function AgentChat() {
                           </Message>
                       );
                     case "tool-searchProducts":
+                      if (hasProductDetails) return null;
                       return (
                           <AgentProductList key={`${m.id}-${i}`} invocation={p} />
                       );
@@ -59,8 +67,8 @@ export function AgentChat() {
                     default:
                       return null;
                   }
-                }),
-            )}
+              });
+            })}
           </ConversationContent>
           <ConversationScrollButton />
         </Conversation>
