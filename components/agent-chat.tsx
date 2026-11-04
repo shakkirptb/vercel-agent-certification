@@ -1,7 +1,8 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { useState } from "react";
+import { WorkflowChatTransport } from "@ai-sdk/workflow/client";
+import { useMemo, useState } from "react";
 import {
   Conversation,
   ConversationContent,
@@ -24,7 +25,27 @@ import { AgentProductCard } from "./agent-product-card";
 export function AgentChat() {
   const [input, setInput] = useState("");
 
-  const { messages, error, sendMessage } = useChat<ShoppingAgentUIMessage>();
+  const activeRunId = useMemo(() => {
+    if (typeof window === "undefined") return undefined;
+    return localStorage.getItem("active-workflow-run-id") ?? undefined;
+  }, []);
+
+  const { messages, error, sendMessage } = useChat<ShoppingAgentUIMessage>({
+    resume: Boolean(activeRunId),
+    transport: new WorkflowChatTransport({
+      api: "/api/chat",
+      onChatSendMessage: (response) => {
+        const runId = response.headers.get("x-workflow-run-id");
+        if (runId) localStorage.setItem("active-workflow-run-id", runId);
+      },
+      onChatEnd: () => localStorage.removeItem("active-workflow-run-id"),
+      prepareReconnectToStreamRequest: ({ api, ...rest }) => {
+        const runId = localStorage.getItem("active-workflow-run-id");
+        if (!runId) throw new Error("No active workflow run ID found");
+        return { ...rest, api: `/api/chat/${encodeURIComponent(runId)}/stream` };
+      },
+    }),
+  });
 
   const handleSubmit = (message: PromptInputMessage) => {
     sendMessage({ text: input });
@@ -37,15 +58,8 @@ export function AgentChat() {
       <div className="flex h-full min-h-0 flex-col">
         <Conversation className="flex-1">
           <ConversationContent>
-            {messages.map((m) => {
-              // When the agent searched only to resolve a name into a slug and
-              // then pulled the full record, the shortlist is scaffolding —
-              // show just the detail card.
-              const hasProductDetails = m.parts.some(
-                  (p) => p.type === "tool-getProductDetails",
-              );
-
-              return m.parts.map((p, i) => {
+            {messages.map((m) =>
+                m.parts.map((p, i) => {
                   switch (p.type) {
                     case "text":
                       return (
@@ -56,7 +70,6 @@ export function AgentChat() {
                           </Message>
                       );
                     case "tool-searchProducts":
-                      if (hasProductDetails) return null;
                       return (
                           <AgentProductList key={`${m.id}-${i}`} invocation={p} />
                       );
@@ -67,8 +80,8 @@ export function AgentChat() {
                     default:
                       return null;
                   }
-              });
-            })}
+                }),
+            )}
           </ConversationContent>
           <ConversationScrollButton />
         </Conversation>
