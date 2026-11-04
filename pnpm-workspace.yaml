@@ -2,3 +2,20 @@ allowBuilds:
   '@swc/core': true
   cbor-extract: true
   esbuild: true
+
+# Temporary waiver: next 16.4.5 was published 2026-11-03T18:01Z and is younger
+# than pnpm's default 24h minimumReleaseAge, so CI/Vercel builds reject the
+# lockfile with ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION. Pinned to this exact
+# version so the waiver lapses on the next Next.js bump; it can be deleted
+# entirely any time after 2026-11-04T18:01Z.
+minimumReleaseAgeExclude:
+  - next@16.4.5
+  - '@next/env@16.4.5'
+  - '@next/swc-darwin-arm64@16.4.5'
+  - '@next/swc-darwin-x64@16.4.5'
+  - '@next/swc-linux-arm64-gnu@16.4.5'
+  - '@next/swc-linux-arm64-musl@16.4.5'
+  - '@next/swc-linux-x64-gnu@16.4.5'
+  - '@next/swc-linux-x64-musl@16.4.5'
+  - '@next/swc-win32-arm64-msvc@16.4.5'
+  - '@next/swc-win32-x64-msvc@16.4.5'
