@@ -60,8 +60,10 @@ that host 404s — don't try to fetch it. The exercise text comes from the user 
 
 ## Commands
 
-Package manager is **pnpm** (`pnpm-lock.yaml` is the source of truth; a stale `package-lock.json`
-also exists — ignore it, don't use npm).
+Package manager is **pnpm**, pinned via `packageManager` in `package.json` (run it through Corepack:
+`corepack enable pnpm`). `pnpm-lock.yaml` is the only lockfile — don't use npm or yarn.
+Dependencies allowed to run install scripts are listed under `allowBuilds` in `pnpm-workspace.yaml`;
+add new ones with `pnpm approve-builds <pkg>`.
 
 - `pnpm dev` — dev server on http://localhost:3000
 - `pnpm build` — production build
